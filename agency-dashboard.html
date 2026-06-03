@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agency OS — 經紀人總覽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--border:#E4E0D8;--border2:#D0CBBD;
+  --text:#1A1816;--muted:#7A746A;--hint:#B0A99E;
+  --green-bg:#E8F3E8;--green-text:#1E6B1E;
+  --amber-bg:#FEF3DC;--amber-text:#7A4F00;
+  --red-bg:#FDECEA;--red-text:#9C2A1E;
+  --blue-bg:#E8F0FE;--blue-text:#1A4FAD;
+  --gray-bg:#F0EDE8;--gray-text:#5A544E;
+  font-family:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{padding:24px;overflow-y:auto}
+.brand{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.brand-name{font-size:13px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted)}
+.brand-sub{font-size:11px;color:var(--hint);margin-top:2px}
+.sidebar-section{padding:0 10px;margin-bottom:8px}
+.sidebar-label{font-size:10px;font-weight:500;color:var(--hint);letter-spacing:0.8px;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.creator-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);text-align:left;transition:all 0.15s}
+.creator-btn:hover{background:var(--bg);color:var(--text)}
+.creator-btn.active{background:var(--bg);color:var(--text);font-weight:500}
+.creator-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.creator-meta{flex:1;min-width:0}
+.creator-btn-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.creator-btn-count{font-size:10px;color:var(--hint);margin-top:1px}
+.active-dot{width:6px;height:6px;border-radius:50%;background:var(--green-text);flex-shrink:0}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:500;letter-spacing:-0.3px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-num{font-size:22px;font-weight:300;letter-spacing:-1px;font-family:'DM Mono',monospace}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px}
+.project-section{margin-bottom:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.section-name{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px}
+.proj-type-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg);color:var(--muted);border:1px solid var(--border);font-weight:400;text-transform:none;letter-spacing:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+
+/* Milestone rows */
+.ms-header{display:grid;grid-template-columns:18px 100px 1fr auto auto auto;gap:8px;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--border);font-size:10px;font-weight:500;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px}
+.ms-row{display:grid;grid-template-columns:18px 100px 1fr auto auto auto;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;transition:background 0.1s}
+.ms-row:last-child{border-bottom:none}
+.ms-row.done-row{opacity:0.38}
+.ms-row:hover{background:#FAFAF8}
+.ms-row.pending-row{background:#FFFDF5}
+.ms-row.drag-over{background:var(--blue-bg);border-top:2px solid var(--blue-text)}
+.ms-row.dragging{opacity:0.35;pointer-events:none}
+.drag-handle{cursor:grab;color:var(--hint);font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:3px;transition:color 0.15s;user-select:none}
+.drag-handle:hover{color:var(--muted)}
+.drag-handle:active{cursor:grabbing}
+
+/* Date input */
+.date-inp{border:none;background:transparent;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;width:95px;cursor:pointer;padding:2px 4px;border-radius:4px}
+.date-inp:focus{outline:none;background:var(--bg)}
+.date-inp.empty-date{color:var(--hint);font-style:italic}
+
+/* Editable labels */
+.editable-label{border-radius:4px;padding:1px 4px;margin:-1px -4px;cursor:text;outline:none;transition:background 0.15s}
+.editable-label:hover{background:var(--bg)}
+.editable-label:focus{background:var(--bg);box-shadow:0 0 0 1.5px var(--border2)}
+.ms-label{font-size:13px}
+.ms-who{font-size:11px;color:var(--hint);margin-top:1px}
+
+/* Chips */
+.chip{font-size:10px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-family:'DM Mono',monospace}
+.chip-red{background:var(--red-bg);color:var(--red-text)}
+.chip-amber{background:var(--amber-bg);color:var(--amber-text)}
+.chip-green{background:var(--green-bg);color:var(--green-text)}
+.chip-gray{background:var(--gray-bg);color:var(--gray-text)}
+.chip-none{background:var(--gray-bg);color:var(--hint)}
+
+/* LINE message button */
+.line-msg-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--hint);font-size:13px;flex-shrink:0;transition:all 0.15s}
+.line-msg-btn:hover{background:var(--bg);color:var(--text);border-color:var(--border2)}
+.line-msg-btn.has-msg{border-color:#4CAF50;color:#2E7D32;background:#F1F8F1}
+
+/* Check button */
+.check-btn{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;transition:all 0.15s}
+.check-btn.done{background:var(--green-bg);border-color:var(--green-text);color:var(--green-text)}
+.check-btn i{font-size:11px}
+
+/* Inline LINE box */
+.line-inline{background:var(--bg);border-left:3px solid #4CAF50;padding:10px 12px 10px 14px;font-size:12px;line-height:1.8;color:var(--text);display:none;position:relative}
+.line-inline.show{display:block}
+.line-inline-footer{display:flex;justify-content:flex-end;margin-top:6px;gap:6px}
+.copy-btn{font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif}
+.copy-btn:hover{background:var(--bg)}
+
+/* Add row */
+.add-ms{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+.add-ms input{flex:1;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none}
+.add-ms input:focus{border-color:var(--border2)}
+.add-ms button{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text)}
+
+/* Notes section */
+.proj-notes{border-top:1px solid var(--border);padding:12px 14px}
+.notes-label{font-size:10px;font-weight:500;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.notes-input{width:100%;border:none;background:transparent;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);resize:none;outline:none;line-height:1.7;min-height:36px;max-height:200px;overflow-y:auto}
+.notes-input::placeholder{color:var(--hint)}
+.notes-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.note-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 6px 3px 9px;border-radius:5px;background:var(--blue-bg);color:var(--blue-text);border:1px solid #C5D8FC;text-decoration:none;max-width:280px}
+.note-link:hover{background:#D8E8FD}
+.note-link-text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1;min-width:0}
+.note-link i{font-size:12px;flex-shrink:0}
+.note-link-del{background:var(--blue-bg);border:none;cursor:pointer;color:var(--blue-text);font-size:12px;padding:2px 3px;margin-left:2px;line-height:1;flex-shrink:0;border-radius:3px;display:flex;align-items:center;opacity:0.6}
+.note-link-del:hover{opacity:1;background:#C5D8FC;color:var(--red-text)}
+.add-link-row{display:flex;gap:6px;margin-top:8px}
+.add-link-row input{flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none}
+.add-link-row input:focus{border-color:var(--border2)}
+.add-link-row button{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);white-space:nowrap}
+.notes-toggle{background:none;border:none;cursor:pointer;font-size:11px;color:var(--hint);font-family:'DM Sans',sans-serif;padding:0;display:flex;align-items:center;gap:3px}
+.notes-toggle:hover{color:var(--muted)}
+
+/* Empty & no-project */
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+.empty i{font-size:22px;color:var(--hint);display:block;margin-bottom:8px}
+.no-project{padding:20px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--surface);padding:9px 18px;border-radius:8px;font-size:12px;opacity:0;transition:all 0.2s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Agency OS</div>
+      <div class="brand-sub">經紀人總覽</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">創作者</div>
+      <button class="creator-btn active" onclick="switchCreator('kurt')" id="sbtn-kurt">
+        <div class="creator-avatar" style="background:#EBF0FD;color:#185FA5">Ku</div>
+        <div class="creator-meta">
+          <div class="creator-btn-name">Kurt</div>
+          <div class="creator-btn-count">3 個進行中</div>
+        </div>
+        <div class="active-dot"></div>
+      </button>
+      <button class="creator-btn" onclick="switchCreator('kiki')" id="sbtn-kiki">
+        <div class="creator-avatar" style="background:#F4C0D1;color:#72243E">Ki</div>
+        <div class="creator-meta">
+          <div class="creator-btn-name">Kiki</div>
+          <div class="creator-btn-count">3 個進行中</div>
+        </div>
+        <div class="active-dot"></div>
+      </button>
+      <button class="creator-btn" onclick="switchCreator('junci')" id="sbtn-junci">
+        <div class="creator-avatar" style="background:#E1F5EE;color:#0F6E56">JC</div>
+        <div class="creator-meta">
+          <div class="creator-btn-name">君慈</div>
+          <div class="creator-btn-count">3 個進行中</div>
+        </div>
+        <div class="active-dot"></div>
+      </button>
+      <button class="creator-btn" onclick="switchCreator('honghua')" id="sbtn-honghua">
+        <div class="creator-avatar" style="background:#FAECE7;color:#993C1D">紅</div>
+        <div class="creator-meta">
+          <div class="creator-btn-name">紅花</div>
+          <div class="creator-btn-count">尚無進行中案件</div>
+        </div>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="main-content"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY = new Date('2026-06-03');
+
+const CREATORS = {
+  kurt: {
+    name:'Kurt', initials:'Ku', color:'#EBF0FD', textColor:'#185FA5',
+    projects:[
+      { id:'kurt-zhongxin', name:'中信專案', type:'IP聯名設計',
+        milestones:[
+          {label:'Kurt 團隊提供設計時程規劃', who:'創作者 → 經紀人', date:'', done:false, line:'嗨 Kurt！中信這邊需要你提供整體設計時程規劃，包含各項完稿的預計時間，方便你這週內給我嗎？謝謝！'},
+          {label:'Bonny & Read 合約律師討論擬定', who:'律師 / 品牌方', date:'', done:false, line:'嗨 Kurt！Bonny & Read 合約律師討論的部分需要進行了，可以告訴我你這邊方便的時間嗎？讓我安排後續。謝謝！'},
+          {label:'米米立壓克力完稿', who:'創作者 → 品牌方', date:'', done:false, line:''},
+          {label:'APP+LINE 主題所有完稿', who:'創作者 → 品牌方', date:'', done:false, line:''},
+          {label:'聯名活動主視覺與素材', who:'創作者 → 品牌方', date:'', done:false, line:''},
+          {label:'贈送貼文', who:'創作者 → 品牌方', date:'', done:false, line:''},
+        ]
+      },
+      { id:'kurt-711', name:'7-11 專案', type:'商品上架',
+        milestones:[
+          {label:'上架商品時程確認及規劃', who:'創作者 → 品牌方', date:'', done:false, line:'嗨 Kurt！7-11 這邊的時程規劃出來了，品牌原定如下：\n\n・6/12 PPT 提案商品\n・6/26 商品確認 Final\n・7/10 提供素材\n・7/17 DM 初提 / 7/24 DM 完稿\n・7/31 商品進倉\n・8/5–9/1 販售\n\n以上時程你這邊可以配合嗎？有問題先告訴我，讓我跟品牌協調。謝謝！'},
+          {label:'PPT 提案商品（商品圖、採購價等）', who:'創作者 → 品牌方', date:'2026-06-12', done:false, line:''},
+          {label:'商品確認 Final（採購價 & 數量）', who:'雙方確認', date:'2026-06-26', done:false, line:''},
+          {label:'素材提供（高清去背圖、情境圖、LOGO）', who:'創作者 → 品牌方', date:'2026-07-10', done:false, line:''},
+          {label:'DM 初提', who:'品牌方', date:'2026-07-17', done:false, line:''},
+          {label:'DM 完稿', who:'品牌方', date:'2026-07-24', done:false, line:''},
+          {label:'商品進倉', who:'創作者', date:'2026-07-31', done:false, line:''},
+        ]
+      },
+      { id:'kurt-dprogram', name:'d program 專案', type:'業配合作',
+        milestones:[
+          {label:'合約用印寄回', who:'創作者 → 品牌方', date:'2026-06-15', done:false, line:'嗨 Kurt！d program 合約紙本已寄出，收到後請公司蓋章用印再寄回給我們。\n\n寄回地址：（請填入地址）\n收件人：（請填入姓名）\n\n大約幾天內方便寄出呢？謝謝！'},
+          {label:'雷標送達（6/24 前）', who:'創作者 → 品牌方', date:'2026-06-24', done:false, line:'嗨 Kurt！d program 的雷標需要在 6/24 前送達，時間有點緊，需要確認一下規格：\n\n・雷標尺寸 & 位置\n・授權文字是否需調整\n・核准稿確認\n\n方便今明兩天回覆我嗎？謝謝！'},
+        ]
+      }
+    ]
+  },
+  kiki: {
+    name:'Kiki', initials:'Ki', color:'#F4C0D1', textColor:'#72243E',
+    projects:[
+      { id:'kiki-relove', name:'Relove 專案', type:'IG 圖文',
+        milestones:[
+          {label:'Final 完稿', who:'雙方確認', date:'2026-06-05', done:false, line:''},
+          {label:'上線', who:'創作者', date:'2026-06-08', done:false, line:''},
+        ]
+      },
+      { id:'kiki-vaseline', name:'凡士林專案', type:'Reels 合作',
+        milestones:[
+          {label:'合作 Brief 待品牌提供', who:'品牌方 → 創作者', date:'', done:false, line:'嗨 Kiki！凡士林這邊的合作 Brief 已收到，幫你整理重點如下：\n\n（請填入 Brief 重點）\n\n有問題的話跟我說，謝謝！'},
+          {label:'拍攝：康是美忠復門市', who:'創作者', date:'2026-06-20', done:false, line:'嗨 Kiki！提醒你 6/20 上午 11:00–12:00 在康是美忠復門市拍攝凡士林的 Reels，記得準時到喔！有問題隨時說。'},
+        ]
+      },
+      { id:'kiki-laglow', name:'Laglow 專案', type:'業配評估中',
+        milestones:[
+          {label:'試用產品送達', who:'品牌方 → 創作者', date:'2026-06-05', done:false, line:''},
+          {label:'試用後執行時程討論', who:'雙方', date:'', done:false, line:'嗨 Kiki！Laglow 的試用品用得如何？沒問題的話我們可以進一步討論執行時程了，方便告訴我你的想法嗎？謝謝！'},
+        ]
+      }
+    ]
+  },
+  junci: {
+    name:'君慈', initials:'JC', color:'#E1F5EE', textColor:'#0F6E56',
+    projects:[
+      { id:'junci-otena', name:'OTENA Clinic 韓國醫美', type:'合約審核中',
+        milestones:[
+          {label:'確認拍攝風格方向', who:'品牌方 → 經紀人', date:'', done:false, line:'嗨 君慈！OTENA Clinic 合約在過了，拍攝風格能否以你為主的問題我這邊也在確認，有消息馬上告訴你。'},
+        ]
+      },
+      { id:'junci-mouggan', name:'mouggan 專案', type:'活動合作',
+        milestones:[
+          {label:'會前會', who:'雙方', date:'2026-06-04', done:false, line:''},
+          {label:'場勘（nari）', who:'雙方', date:'2026-06-04', done:false, line:''},
+          {label:'提案', who:'創作者 → 品牌方', date:'2026-06-10', done:false, line:''},
+          {label:'客戶整理回饋', who:'品牌方', date:'2026-06-15', done:false, line:''},
+          {label:'定稿', who:'雙方確認', date:'2026-06-22', done:false, line:''},
+        ]
+      },
+      { id:'junci-cartier', name:'卡地亞專案', type:'活動出席',
+        milestones:[
+          {label:'高雄店開幕出席（兩天一夜）', who:'創作者', date:'2026-06-25', done:false, line:'嗨 君慈！提醒你 6/25–26 高雄卡地亞店開幕錶展活動，兩天一夜，記得確認行程安排喔！'},
+        ]
+      }
+    ]
+  },
+  honghua: {
+    name:'紅花', initials:'紅', color:'#FAECE7', textColor:'#993C1D',
+    projects:[]
+  }
+};
+
+let currentCreator = 'kurt';
+let projNotes = {};
+let projLinks = {};
+
+async function loadStorage() {
+  try {
+    const r = await window.storage.get('agency_v3', true);
+    if (r && r.value) {
+      const s = JSON.parse(r.value);
+      if (s.milestones) {
+        Object.entries(s.milestones).forEach(([pid, saved]) => {
+          const cr = Object.values(CREATORS).find(c => c.projects.find(p => p.id === pid));
+          const proj = cr && cr.projects.find(p => p.id === pid);
+          if (!proj) return;
+          saved.forEach((m, i) => {
+            if (!proj.milestones[i]) return;
+            if (m.date !== undefined) proj.milestones[i].date = m.date;
+            if (m.done !== undefined) proj.milestones[i].done = m.done;
+            if (m.label) proj.milestones[i].label = m.label;
+            if (m.who) proj.milestones[i].who = m.who;
+            if (m.line !== undefined) proj.milestones[i].line = m.line;
+          });
+        });
+      }
+    }
+      if (s.projNotes) Object.assign(projNotes, s.projNotes);
+      if (s.projLinks) Object.assign(projLinks, s.projLinks);
+  } catch(e) {}
+  renderCreator(currentCreator);
+}
+
+async function saveStorage() {
+  try {
+    const milestones = {};
+    Object.values(CREATORS).forEach(cr => {
+      cr.projects.forEach(p => {
+        milestones[p.id] = p.milestones.map(m => ({
+          date: m.date, done: m.done, label: m.label, who: m.who, line: m.line
+        }));
+      });
+    });
+    await window.storage.set('agency_v3', JSON.stringify({milestones, projNotes, projLinks}), true);
+  } catch(e) {}
+}
+
+function switchCreator(key) {
+  currentCreator = key;
+  document.querySelectorAll('.creator-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sbtn-'+key).classList.add('active');
+  renderCreator(key);
+}
+
+function renderCreator(key) {
+  const cr = CREATORS[key];
+  const main = document.getElementById('main-content');
+
+  const urgent = urgentCount(cr);
+  const pending = pendingCount(cr);
+  const done = doneCount(cr);
+
+  let statsHtml = `<div class="stats-row">
+    <div class="stat"><div class="stat-num">${cr.projects.length}</div><div class="stat-label">進行中案件</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red-text)">${urgent}</div><div class="stat-label">7天內截止</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--green-text)">${done}</div><div class="stat-label">已完成里程碑</div></div>
+  </div>`;
+
+  let projectsHtml = '';
+  if (cr.projects.length === 0) {
+    projectsHtml = `<div class="no-project"><i class="ti ti-coffee" style="font-size:24px;color:var(--hint);display:block;margin-bottom:8px"></i>目前沒有進行中的案件</div>`;
+  } else {
+    cr.projects.forEach(proj => { projectsHtml += renderProject(proj, key); });
+  }
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title" style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${cr.color};color:${cr.textColor};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500">${cr.initials}</div>
+          ${cr.name}
+        </div>
+        <div class="page-sub">所有案件時程一覽</div>
+      </div>
+    </div>
+    ${statsHtml}${projectsHtml}`;
+}
+
+function renderProject(proj, creatorKey) {
+  const rows = proj.milestones.map((m, i) => renderMsRow(proj, m, i, creatorKey)).join('');
+  const body = proj.milestones.length === 0
+    ? `<div class="empty"><i class="ti ti-calendar-off" aria-hidden="true"></i>尚無里程碑</div>`
+    : `<div class="ms-header"><div></div><div>日期</div><div>里程碑 <span style="font-size:9px;color:var(--hint);font-weight:400;letter-spacing:0">(點擊文字可編輯 · 拖曳 ⠿ 可排序)</span></div><div></div><div></div><div></div></div>${rows}`;
+
+  const note = projNotes[proj.id] || '';
+  const links = projLinks[proj.id] || [];
+  const linksHtml = links.map((l,li) => `
+    <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
+      <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
+      <button class="note-link-del" onclick="event.preventDefault();removeLink('${proj.id}',${li},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </a>`).join('');
+
+  return `<div class="project-section">
+    <div class="section-header">
+      <div class="section-name">
+        <i class="ti ti-folder" style="font-size:13px" aria-hidden="true"></i>
+        ${proj.name}
+        <span class="proj-type-badge">${proj.type}</span>
+      </div>
+    </div>
+    <div class="card" id="card-${proj.id}">
+      ${body}
+      <div class="add-ms">
+        <input type="text" id="newms-${proj.id}" placeholder="新增里程碑...">
+        <button onclick="addMs('${proj.id}','${creatorKey}')">+ 新增</button>
+      </div>
+      <div class="proj-notes" id="notes-${proj.id}">
+        <div class="notes-label">
+          <i class="ti ti-notes" aria-hidden="true"></i> 備註 &amp; 檔案連結
+        </div>
+        <textarea class="notes-input" id="noteinp-${proj.id}" placeholder="Brief 重點、合作需求、特殊備注..."
+          onblur="saveNote('${proj.id}','${creatorKey}')"
+          oninput="autoResize(this)"
+        >${note}</textarea>
+        ${links.length > 0 ? `<div class="notes-links" id="links-${proj.id}">${linksHtml}</div>` : `<div class="notes-links" id="links-${proj.id}"></div>`}
+        <div class="add-link-row">
+          <input type="text" id="linkinp-${proj.id}" placeholder="貼上連結（Google Drive、Notion、Dropbox...）" onkeydown="if(event.key==='Enter'){event.preventDefault();addLink('${proj.id}','${creatorKey}')}">
+          <button onclick="addLink('${proj.id}','${creatorKey}')">+ 加入</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderMsRow(proj, m, i, creatorKey) {
+  const chip = getChip(m.date, m.done);
+  const isPending = !m.date && !m.done;
+  const hasLine = m.line && m.line.trim().length > 0;
+  const lineId = `line-${proj.id}-${i}`;
+  return `
+    <div class="ms-row ${m.done?'done-row':''} ${isPending?'pending-row':''}" data-proj="${proj.id}" data-i="${i}"
+      draggable="true"
+      ondragstart="dragStart(event,'${proj.id}',${i},'${creatorKey}')"
+      ondragover="dragOver(event)"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'${proj.id}',${i},'${creatorKey}')">
+      <div class="drag-handle" title="拖曳排序"><i class="ti ti-grip-vertical" aria-hidden="true"></i></div>
+      <input type="date" class="date-inp ${m.date?'':'empty-date'}" value="${m.date}"
+        placeholder="待定"
+        onchange="updateDate('${proj.id}',${i},this.value,'${creatorKey}')">
+      <div>
+        <div class="ms-label editable-label"
+          contenteditable="true" spellcheck="false" title="點擊編輯"
+          onblur="updateLabel('${proj.id}',${i},this,'${creatorKey}')"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        >${m.label}</div>
+        <div class="ms-who editable-label"
+          contenteditable="true" spellcheck="false" title="點擊編輯負責方"
+          onblur="updateWho('${proj.id}',${i},this,'${creatorKey}')"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        >${m.who}</div>
+      </div>
+      <div class="${chip.cls}">${chip.txt}</div>
+      <button class="line-msg-btn ${hasLine?'has-msg':''}" onclick="toggleLine('${lineId}')" title="${hasLine?'查看 LINE 訊息':'無 LINE 訊息'}" aria-label="LINE 訊息">
+        <i class="ti ti-message" aria-hidden="true"></i>
+      </button>
+      <button class="check-btn ${m.done?'done':''}" onclick="toggleMs('${proj.id}',${i},'${creatorKey}')" aria-label="標記完成">
+        <i class="ti ti-check" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="line-inline" id="${lineId}">
+      <div style="font-size:10px;color:#2E7D32;font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">LINE 訊息</div>
+      <div id="${lineId}-text" contenteditable="true" spellcheck="false" style="outline:none;line-height:1.8;font-size:12px"
+        onblur="updateLine('${proj.id}',${i},this,'${creatorKey}')"
+      >${(m.line||'（尚無訊息，點此編輯）').replace(/\n/g,'<br>')}</div>
+      <div class="line-inline-footer">
+        <button class="copy-btn" onclick="copyLine('${lineId}-text')">複製</button>
+      </div>
+    </div>`;
+}
+
+function toggleLine(id) {
+  const box = document.getElementById(id);
+  if (box) box.classList.toggle('show');
+}
+
+function copyLine(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText.trim();
+  navigator.clipboard.writeText(text).catch(()=>{});
+  showToast('已複製 LINE 訊息');
+}
+
+function updateLine(projId, i, el, creatorKey) {
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  proj.milestones[i].line = el.innerText.trim();
+  // update has-msg button state
+  const row = document.querySelector(`[data-proj="${projId}"][data-i="${i}"]`);
+  if (row) {
+    const btn = row.querySelector('.line-msg-btn');
+    if (btn) btn.classList.toggle('has-msg', proj.milestones[i].line.length > 0);
+  }
+  saveStorage();
+}
+
+function updateLabel(projId, i, el, creatorKey) {
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  const v = el.innerText.trim();
+  if (!v) { el.innerText = proj.milestones[i].label; return; }
+  proj.milestones[i].label = v;
+  saveStorage();
+  showToast('已更新');
+}
+
+function updateWho(projId, i, el, creatorKey) {
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  proj.milestones[i].who = el.innerText.trim() || '—';
+  saveStorage();
+}
+
+function toggleMs(projId, i, creatorKey) {
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  proj.milestones[i].done = !proj.milestones[i].done;
+  renderCreator(creatorKey);
+  saveStorage();
+}
+
+function updateDate(projId, i, val, creatorKey) {
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  proj.milestones[i].date = val;
+  const row = document.querySelector(`[data-proj="${projId}"][data-i="${i}"]`);
+  if (row) {
+    const chips = row.querySelectorAll('div');
+    const c = getChip(val, proj.milestones[i].done);
+    // chip is the 3rd column div
+    const chipEl = row.children[2];
+    if (chipEl) { chipEl.className = c.cls; chipEl.textContent = c.txt; }
+    const dateInp = row.querySelector('.date-inp');
+    if (dateInp) dateInp.classList.toggle('empty-date', !val);
+    row.classList.toggle('pending-row', !val && !proj.milestones[i].done);
+  }
+  saveStorage();
+}
+
+function addMs(projId, creatorKey) {
+  const inp = document.getElementById('newms-'+projId);
+  const val = inp && inp.value.trim();
+  if (!val) return;
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === projId);
+  if (!proj) return;
+  proj.milestones.push({label:val, who:'—', date:'', done:false, line:''});
+  saveStorage();
+  renderCreator(creatorKey);
+}
+
+function getChip(date, done) {
+  if (done) return {cls:'chip chip-gray', txt:'完成'};
+  if (!date) return {cls:'chip chip-none', txt:'待定'};
+  const d = Math.ceil((new Date(date) - TODAY) / 86400000);
+  if (d < 0) return {cls:'chip chip-red', txt:'逾期'};
+  if (d === 0) return {cls:'chip chip-red', txt:'今天'};
+  if (d <= 5) return {cls:'chip chip-red', txt:d+'天後'};
+  if (d <= 10) return {cls:'chip chip-amber', txt:d+'天後'};
+  return {cls:'chip chip-green', txt:d+'天後'};
+}
+
+function urgentCount(cr) {
+  let n = 0;
+  cr.projects.forEach(p => p.milestones.forEach(m => {
+    if (!m.done && m.date) {
+      const d = Math.ceil((new Date(m.date)-TODAY)/86400000);
+      if (d >= 0 && d <= 7) n++;
+    }
+  }));
+  return n;
+}
+
+function pendingCount(cr) {
+  let n = 0;
+  cr.projects.forEach(p => p.milestones.forEach(m => { if (!m.done && !m.date) n++; }));
+  return n;
+}
+
+function doneCount(cr) {
+  let n = 0;
+  cr.projects.forEach(p => p.milestones.forEach(m => { if (m.done) n++; }));
+  return n;
+}
+
+
+
+// ── NOTES & LINKS ────────────────────────────────────────────────────────────
+function saveNote(projId, creatorKey) {
+  const inp = document.getElementById('noteinp-'+projId);
+  if (!inp) return;
+  projNotes[projId] = inp.value;
+  saveStorage();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+function addLink(projId, creatorKey) {
+  const inp = document.getElementById('linkinp-'+projId);
+  if (!inp) return;
+  let url = inp.value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  // derive a short label from url
+  let label = url;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace('www.','');
+    const path = u.pathname.split('/').filter(Boolean);
+    label = host + (path.length ? ' / '+path[path.length-1] : '');
+    if (label.length > 40) label = label.slice(0,38)+'…';
+  } catch(e) {}
+  if (!projLinks[projId]) projLinks[projId] = [];
+  projLinks[projId].push({url, label});
+  inp.value = '';
+  saveStorage();
+  // re-render just the links area
+  const container = document.getElementById('links-'+projId);
+  if (container) {
+    const links = projLinks[projId];
+    container.innerHTML = links.map((l,li) => `
+      <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
+        <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
+        <button class="note-link-del" onclick="event.preventDefault();removeLink('${projId}',${li},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </a>`).join('');
+  }
+  showToast('連結已加入');
+}
+
+function removeLink(projId, li, creatorKey) {
+  if (!projLinks[projId]) return;
+  projLinks[projId].splice(li, 1);
+  saveStorage();
+  const container = document.getElementById('links-'+projId);
+  if (container) {
+    const links = projLinks[projId];
+    container.innerHTML = links.map((l,idx) => `
+      <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
+        <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
+        <button class="note-link-del" onclick="event.preventDefault();removeLink('${projId}',${idx},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </a>`).join('');
+  }
+}
+
+// ── DRAG & DROP ────────────────────────────────────────────────────────────
+let dragSrcProjId = null;
+let dragSrcIdx = null;
+let dragSrcCreator = null;
+
+function dragStart(e, projId, i, creatorKey) {
+  dragSrcProjId = projId;
+  dragSrcIdx = i;
+  dragSrcCreator = creatorKey;
+  e.dataTransfer.effectAllowed = 'move';
+  // mark the row as dragging after a tick so it renders first
+  setTimeout(() => {
+    const row = document.querySelector(`[data-proj="${projId}"][data-i="${i}"]`);
+    if (row) row.classList.add('dragging');
+  }, 0);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  row.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function dragDrop(e, targetProjId, targetIdx, creatorKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragSrcProjId !== targetProjId || dragSrcIdx === targetIdx) {
+    cleanDragState(creatorKey); return;
+  }
+  const cr = CREATORS[creatorKey];
+  const proj = cr.projects.find(p => p.id === targetProjId);
+  if (!proj) { cleanDragState(creatorKey); return; }
+  const ms = proj.milestones;
+  const item = ms.splice(dragSrcIdx, 1)[0];
+  ms.splice(targetIdx, 0, item);
+  saveStorage();
+  cleanDragState(creatorKey);
+  renderCreator(creatorKey);
+  showToast('順序已更新');
+}
+
+function cleanDragState(creatorKey) {
+  dragSrcProjId = null; dragSrcIdx = null; dragSrcCreator = null;
+  document.querySelectorAll('.ms-row').forEach(r => r.classList.remove('dragging','drag-over'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+if (typeof window.storage !== 'undefined') { loadStorage(); }
+else { renderCreator('kurt'); }
+</script>
+</body>
+</html>

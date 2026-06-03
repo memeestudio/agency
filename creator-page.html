@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的案件進度</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#F7F5F0;--surface:#FFFFFF;--border:#E4E0D8;
+  --text:#1A1816;--muted:#7A746A;--hint:#B0A99E;
+  --green-bg:#E8F3E8;--green-text:#1E6B1E;--green-border:#A8D4A8;
+  --amber-bg:#FEF3DC;--amber-text:#7A4F00;--amber-border:#F0CC80;
+  --red-bg:#FDECEA;--red-text:#9C2A1E;
+  --blue-bg:#E8F0FE;--blue-text:#1A4FAD;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;padding-bottom:32px}
+.topbar{padding:20px 20px 0}
+.greeting{font-size:22px;font-weight:300;letter-spacing:-0.5px}
+.greeting strong{font-weight:500}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.section{padding:16px 20px 0}
+.section-label{font-size:10px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:var(--hint);margin-bottom:10px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+.task-item{padding:16px;border-bottom:1px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.task-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.task-project{font-size:10px;font-weight:500;letter-spacing:0.4px;text-transform:uppercase;color:var(--hint);margin-bottom:4px}
+.task-title{font-size:15px;font-weight:500;line-height:1.3}
+.task-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge-wait{background:var(--amber-bg);color:var(--amber-text);border:1px solid var(--amber-border)}
+.badge-done{background:var(--green-bg);color:var(--green-text);border:1px solid var(--green-border)}
+textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:none;outline:none;min-height:56px;line-height:1.6;margin-bottom:10px}
+textarea:focus{border-color:var(--hint);background:var(--surface)}
+.task-actions{display:flex;gap:8px}
+.act-btn{flex:1;padding:10px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);font-family:'DM Sans',sans-serif;color:var(--text);text-align:center;transition:all 0.15s}
+.act-btn:active{transform:scale(0.97)}
+.act-btn.done{background:var(--text);color:var(--surface);border-color:var(--text)}
+.act-btn.save{font-weight:400;font-size:12px;flex:0.6}
+
+/* Timeline view */
+.timeline-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border-bottom:none}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid var(--border)}
+.tl-dot.done{background:var(--green-text);border-color:var(--green-text)}
+.tl-dot.upcoming{background:var(--surface);border-color:var(--hint)}
+.tl-dot.urgent{background:var(--red-text);border-color:var(--red-text)}
+.tl-dot.soon{background:var(--amber-text);border-color:var(--amber-text)}
+.tl-info{flex:1}
+.tl-label{font-size:13px}
+.tl-date{font-size:11px;color:var(--hint);margin-top:2px;font-family:'DM Sans',sans-serif}
+.tl-chip{font-size:10px;padding:2px 7px;border-radius:20px}
+.chip-red{background:var(--red-bg);color:var(--red-text)}
+.chip-amber{background:var(--amber-bg);color:var(--amber-text)}
+.chip-green{background:var(--green-bg);color:var(--green-text)}
+.chip-gray{background:#F0EDE8;color:var(--muted)}
+
+/* Empty & Loading */
+.empty{padding:32px 20px;text-align:center;color:var(--muted);font-size:13px}
+.empty-icon{font-size:28px;color:var(--hint);margin-bottom:10px}
+.loading{padding:40px 20px;text-align:center;color:var(--hint);font-size:13px}
+.proj-sep{font-size:11px;font-weight:500;color:var(--hint);padding:12px 16px 6px;letter-spacing:0.3px;border-bottom:1px solid var(--border);background:#FAFAF8;text-transform:uppercase;font-size:10px;letter-spacing:0.6px}
+
+/* Done msg */
+.done-msg{background:var(--green-bg);border:1px solid var(--green-border);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--green-text)}
+.done-msg i{font-size:20px;flex-shrink:0}
+
+/* Tabs */
+.page-tabs{display:flex;gap:2px;background:var(--border);border-radius:8px;padding:3px;margin:14px 0}
+.ptab{flex:1;padding:7px 0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:'DM Sans',sans-serif;text-align:center}
+.ptab.on{background:var(--surface);color:var(--text)}
+
+/* CREATOR SELECTOR (for demo) */
+.demo-bar{background:var(--amber-bg);border-bottom:1px solid var(--amber-border);padding:8px 20px;font-size:11px;color:var(--amber-text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.demo-bar strong{font-weight:500}
+.demo-btn{padding:3px 10px;border-radius:5px;border:1px solid var(--amber-border);background:var(--surface);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--amber-text)}
+.demo-btn.on{background:var(--amber-text);color:var(--surface)}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--surface);padding:9px 18px;border-radius:8px;font-size:12px;opacity:0;transition:all 0.2s;pointer-events:none;z-index:99;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- Demo switcher — 實際給創作者時此列隱藏，URL 帶參數決定是誰 -->
+<div class="demo-bar">
+  <strong>預覽模式：</strong>切換創作者視角
+  <button class="demo-btn on" onclick="setCreator('kurt',this)">Kurt</button>
+  <button class="demo-btn" onclick="setCreator('kiki',this)">Kiki</button>
+  <button class="demo-btn" onclick="setCreator('junci',this)">君慈</button>
+  <button class="demo-btn" onclick="setCreator('honghua',this)">紅花</button>
+</div>
+
+<div class="topbar" id="topbar">
+  <div class="loading">載入中...</div>
+</div>
+
+<div id="page-body"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY = new Date('2026-06-03');
+
+// Same data structure as dashboard — in production, read purely from storage
+const CREATOR_DATA = {
+  kurt: {
+    name: 'Kurt',
+    projects: [
+      {id:'kurt-zhongxin', name:'中信專案', type:'IP聯名設計',
+        milestones:[
+          {label:'Kurt 團隊提供設計時程規劃',date:'',done:false},
+          {label:'米米立壓克力完稿',date:'',done:false},
+          {label:'APP+LINE 主題所有完稿',date:'',done:false},
+          {label:'聯名活動主視覺與素材',date:'',done:false},
+          {label:'贈送貼文',date:'',done:false},
+        ],
+        triggerLabels:['Bonny & Read 合約律師討論擬定'],
+        triggerDescs:['第三方製造商合約需要律師介入討論，經紀人會另行通知時程。']
+      },
+      {id:'kurt-711', name:'7-11 專案', type:'商品上架',
+        milestones:[
+          {label:'PPT 提案商品',date:'2026-06-12',done:false},
+          {label:'商品確認 Final',date:'2026-06-26',done:false},
+          {label:'素材提供',date:'2026-07-10',done:false},
+          {label:'商品進倉',date:'2026-07-31',done:false},
+        ],
+        triggerLabels:['上架商品時程確認及規劃'],
+        triggerDescs:['品牌時程規劃已出來，請確認你這邊可以配合的時間。']
+      },
+      {id:'kurt-dprogram', name:'d program 專案', type:'業配合作',
+        milestones:[
+          {label:'合約用印寄回',date:'2026-06-15',done:false},
+          {label:'雷標送達（6/24前）',date:'2026-06-24',done:false},
+        ],
+        triggerLabels:['合約用印提醒','雷標製作確認'],
+        triggerDescs:['合約紙本已寄出，請用印後寄回。','需在 6/24 前送達，請確認規格。']
+      },
+    ]
+  },
+  kiki: {
+    name: 'Kiki',
+    projects: [
+      {id:'kiki-relove', name:'Relove 專案', type:'IG 圖文',
+        milestones:[
+          {label:'Final 完稿',date:'2026-06-05',done:false},
+          {label:'上線',date:'2026-06-08',done:false},
+        ],
+        triggerLabels:[], triggerDescs:[]
+      },
+      {id:'kiki-vaseline', name:'凡士林專案', type:'Reels 合作',
+        milestones:[
+          {label:'拍攝：康是美忠復門市',date:'2026-06-20',done:false},
+        ],
+        triggerLabels:['合作 Brief 確認'],
+        triggerDescs:['品牌 Brief 確認後，經紀人會通知你執行細節。']
+      },
+      {id:'kiki-laglow', name:'Laglow 專案', type:'業配評估中',
+        milestones:[
+          {label:'試用產品送達',date:'2026-06-05',done:false},
+        ],
+        triggerLabels:['試用後時程討論'],
+        triggerDescs:['試用沒問題後，再進一步討論執行時程。']
+      },
+    ]
+  },
+  junci: {
+    name: '君慈',
+    projects: [
+      {id:'junci-otena', name:'OTENA Clinic 韓國醫美', type:'合約審核中',
+        milestones:[],
+        triggerLabels:['拍攝風格確認'],
+        triggerDescs:['經紀人正在與品牌確認拍攝風格，確認後告知你結果。']
+      },
+      {id:'junci-mouggan', name:'mouggan 專案', type:'活動合作',
+        milestones:[
+          {label:'會前會',date:'2026-06-04',done:false},
+          {label:'場勘（nari）',date:'2026-06-04',done:false},
+          {label:'提案',date:'2026-06-10',done:false},
+          {label:'客戶整理回饋',date:'2026-06-15',done:false},
+          {label:'定稿',date:'2026-06-22',done:false},
+        ],
+        triggerLabels:[], triggerDescs:[]
+      },
+      {id:'junci-cartier', name:'卡地亞專案', type:'活動出席',
+        milestones:[
+          {label:'高雄店開幕出席（兩天一夜）',date:'2026-06-25',done:false},
+        ],
+        triggerLabels:[], triggerDescs:[]
+      },
+    ]
+  },
+  honghua: {
+    name: '紅花',
+    projects: []
+  }
+};
+
+let currentCreator = 'kurt';
+let currentTab = 'tasks';
+let trigStates = {};
+let trigNotes = {};
+let msDoneLocal = {};
+
+async function loadStorage() {
+  try {
+    const r = await window.storage.get('agency_state_v2', true);
+    if (r && r.value) {
+      const s = JSON.parse(r.value);
+      if (s.trigStates) Object.assign(trigStates, s.trigStates);
+      if (s.trigNotes) Object.assign(trigNotes, s.trigNotes);
+      if (s.milestones) {
+        Object.entries(s.milestones).forEach(([pid, ms]) => {
+          msDoneLocal[pid] = ms.map(m => ({date: m.date, done: m.done}));
+        });
+      }
+    }
+  } catch(e) {}
+  render();
+}
+
+async function saveStorage() {
+  try {
+    const r = await window.storage.get('agency_state_v2', true);
+    let existing = {};
+    if (r && r.value) { try { existing = JSON.parse(r.value); } catch(e){} }
+    if (!existing.milestones) existing.milestones = {};
+    Object.entries(msDoneLocal).forEach(([pid, ms]) => { existing.milestones[pid] = ms; });
+    existing.trigStates = trigStates;
+    existing.trigNotes = trigNotes;
+    await window.storage.set('agency_state_v2', JSON.stringify(existing), true);
+  } catch(e) {}
+}
+
+function setCreator(key, btn) {
+  currentCreator = key;
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function render() {
+  const cr = CREATOR_DATA[currentCreator];
+  document.getElementById('topbar').innerHTML = `
+    <div class="greeting">嗨，<strong>${cr.name}</strong> 👋</div>
+    <div class="sub">${getSubtext(cr)}</div>
+    <div class="page-tabs">
+      <button class="ptab ${currentTab==='tasks'?'on':''}" onclick="switchTab('tasks')">待處理事項</button>
+      <button class="ptab ${currentTab==='timeline'?'on':''}" onclick="switchTab('timeline')">所有時程</button>
+    </div>`;
+
+  if (currentTab === 'tasks') renderTasks(cr);
+  else renderTimeline(cr);
+}
+
+function getSubtext(cr) {
+  if (cr.projects.length === 0) return '目前沒有進行中的案件';
+  const activeTasks = getActiveTasks(cr).length;
+  if (activeTasks === 0) return '目前沒有待處理事項，繼續加油！';
+  return `你有 ${activeTasks} 件待處理事項`;
+}
+
+function getActiveTasks(cr) {
+  const tasks = [];
+  cr.projects.forEach(proj => {
+    proj.triggerLabels && proj.triggerLabels.forEach((label, i) => {
+      const key = proj.id+'_'+i;
+      const state = trigStates[key];
+      if (state === 'unlocked') {
+        tasks.push({proj, label, desc: proj.triggerDescs[i]||'', key, i});
+      }
+    });
+  });
+  return tasks;
+}
+
+function renderTasks(cr) {
+  const body = document.getElementById('page-body');
+  const tasks = getActiveTasks(cr);
+
+  if (cr.projects.length === 0) {
+    body.innerHTML = `<div class="section"><div class="empty"><div class="empty-icon"><i class="ti ti-coffee" aria-hidden="true"></i></div>目前沒有進行中的案件<br>有新合作機會經紀人會通知你</div></div>`;
+    return;
+  }
+
+  if (tasks.length === 0) {
+    body.innerHTML = `<div class="section"><div class="done-msg"><i class="ti ti-circle-check" aria-hidden="true"></i><div><div style="font-weight:500">目前沒有待處理事項</div><div style="font-size:12px;margin-top:2px;opacity:0.8">有新的事項時這裡會出現，記得定期來看看</div></div></div></div>`;
+    return;
+  }
+
+  let html = `<div class="section"><div class="section-label">需要你處理的事</div><div class="card">`;
+  tasks.forEach(task => {
+    const savedNote = trigNotes[task.key] || '';
+    const isDone = trigStates[task.key] === 'done';
+    if (isDone) return;
+    html += `<div class="task-item" id="task-${task.key}">
+      <div class="task-project">${task.proj.name} · ${task.proj.type}</div>
+      <div class="task-header">
+        <div class="task-title">${task.label}</div>
+        <div class="badge badge-wait">待處理</div>
+      </div>
+      <div class="task-desc">${task.desc}</div>
+      <textarea id="tnote-${task.key}" placeholder="備註一下目前狀況，或預計完成時間（選填）...">${savedNote}</textarea>
+      <div class="task-actions">
+        <button class="act-btn done" onclick="markDone('${task.key}','${task.proj.id}',${task.i})">完成了 ✓</button>
+        <button class="act-btn save" onclick="saveNote('${task.key}')">儲存備註</button>
+      </div>
+    </div>`;
+  });
+  html += `</div></div>`;
+  body.innerHTML = html;
+}
+
+function renderTimeline(cr) {
+  const body = document.getElementById('page-body');
+  if (cr.projects.length === 0) {
+    body.innerHTML = `<div class="section"><div class="empty"><div class="empty-icon"><i class="ti ti-calendar-off" aria-hidden="true"></i></div>目前沒有時程資料</div></div>`;
+    return;
+  }
+
+  let html = '<div class="section">';
+  cr.projects.forEach(proj => {
+    const saved = msDoneLocal[proj.id];
+    html += `<div class="section-label" style="margin-bottom:6px">${proj.name}</div><div class="card" style="margin-bottom:14px">`;
+    if (!proj.milestones || proj.milestones.length === 0) {
+      html += `<div style="padding:14px 16px;font-size:12px;color:var(--hint)">時程待確認</div>`;
+    } else {
+      proj.milestones.forEach((m, i) => {
+        const isDone = saved && saved[i] ? saved[i].done : m.done;
+        const date = saved && saved[i] ? saved[i].date : m.date;
+        const chip = getChip(date, isDone);
+        const dotClass = isDone ? 'done' : chip.cls.includes('red') ? 'urgent' : chip.cls.includes('amber') ? 'soon' : 'upcoming';
+        html += `<div class="timeline-item">
+          <div class="tl-dot ${dotClass}"></div>
+          <div class="tl-info">
+            <div class="tl-label" style="${isDone?'opacity:0.5':''}">${m.label}</div>
+            <div class="tl-date">${date || '日期待定'}</div>
+          </div>
+          <div class="${chip.cls}">${chip.txt}</div>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+function switchTab(t) {
+  currentTab = t;
+  render();
+}
+
+function markDone(key, projId, i) {
+  trigStates[key] = 'done';
+  const note = document.getElementById('tnote-'+key);
+  if (note && note.value.trim()) trigNotes[key] = note.value.trim();
+  saveStorage();
+  showToast('已回報完成！');
+  render();
+}
+
+function saveNote(key) {
+  const note = document.getElementById('tnote-'+key);
+  if (!note) return;
+  trigNotes[key] = note.value.trim();
+  saveStorage();
+  showToast('備註已儲存，經紀人看得到');
+}
+
+function getChip(date, done) {
+  if (done) return {cls:'tl-chip chip-gray', txt:'完成'};
+  if (!date) return {cls:'tl-chip', txt:'待定'};
+  const d = Math.ceil((new Date(date) - TODAY) / 86400000);
+  if (d < 0) return {cls:'tl-chip chip-red', txt:'逾期'};
+  if (d === 0) return {cls:'tl-chip chip-red', txt:'今天'};
+  if (d <= 5) return {cls:'tl-chip chip-red', txt:d+'天後'};
+  if (d <= 10) return {cls:'tl-chip chip-amber', txt:d+'天後'};
+  return {cls:'tl-chip chip-green', txt:d+'天後'};
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+if (typeof window.storage !== 'undefined') {
+  loadStorage();
+} else {
+  render();
+}
+</script>
+</body>
+</html>
