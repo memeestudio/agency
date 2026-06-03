@@ -74,11 +74,6 @@ textarea:focus{border-color:var(--hint);background:var(--surface)}
 .ptab{flex:1;padding:7px 0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:'DM Sans',sans-serif;text-align:center}
 .ptab.on{background:var(--surface);color:var(--text)}
 
-/* CREATOR SELECTOR (for demo) */
-.demo-bar{background:var(--amber-bg);border-bottom:1px solid var(--amber-border);padding:8px 20px;font-size:11px;color:var(--amber-text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.demo-bar strong{font-weight:500}
-.demo-btn{padding:3px 10px;border-radius:5px;border:1px solid var(--amber-border);background:var(--surface);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--amber-text)}
-.demo-btn.on{background:var(--amber-text);color:var(--surface)}
 
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--surface);padding:9px 18px;border-radius:8px;font-size:12px;opacity:0;transition:all 0.2s;pointer-events:none;z-index:99;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -86,14 +81,6 @@ textarea:focus{border-color:var(--hint);background:var(--surface)}
 </head>
 <body>
 
-<!-- Demo switcher — 實際給創作者時此列隱藏，URL 帶參數決定是誰 -->
-<div class="demo-bar">
-  <strong>預覽模式：</strong>切換創作者視角
-  <button class="demo-btn on" onclick="setCreator('kurt',this)">Kurt</button>
-  <button class="demo-btn" onclick="setCreator('kiki',this)">Kiki</button>
-  <button class="demo-btn" onclick="setCreator('junci',this)">君慈</button>
-  <button class="demo-btn" onclick="setCreator('honghua',this)">紅花</button>
-</div>
 
 <div class="topbar" id="topbar">
   <div class="loading">載入中...</div>
@@ -390,6 +377,12 @@ function showToast(msg) {
 }
 
 if (typeof window.storage !== 'undefined') {
+  // 從網址讀取 ?creator=kurt 參數
+  const params = new URLSearchParams(window.location.search);
+  const creatorParam = params.get('creator');
+  if (creatorParam && CREATOR_DATA[creatorParam]) {
+    currentCreator = creatorParam;
+  }
   loadStorage();
 } else {
   render();
