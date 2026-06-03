@@ -195,7 +195,7 @@ let msDoneLocal = {};
 
 async function loadStorage() {
   try {
-    const r = await window.storage.get('agency_state_v2', true);
+    const r = await window.storage.get('agency_v3', true);
     if (r && r.value) {
       const s = JSON.parse(r.value);
       if (s.trigStates) Object.assign(trigStates, s.trigStates);
@@ -212,14 +212,14 @@ async function loadStorage() {
 
 async function saveStorage() {
   try {
-    const r = await window.storage.get('agency_state_v2', true);
+    const r = await window.storage.get('agency_v3', true);
     let existing = {};
     if (r && r.value) { try { existing = JSON.parse(r.value); } catch(e){} }
     if (!existing.milestones) existing.milestones = {};
     Object.entries(msDoneLocal).forEach(([pid, ms]) => { existing.milestones[pid] = ms; });
     existing.trigStates = trigStates;
     existing.trigNotes = trigNotes;
-    await window.storage.set('agency_state_v2', JSON.stringify(existing), true);
+    await window.storage.set('agency_v3', JSON.stringify(existing), true);
   } catch(e) {}
 }
 
