@@ -91,7 +91,7 @@ textarea:focus{border-color:var(--hint);background:var(--surface)}
 <div class="toast" id="toast"></div>
 
 <script>
-const TODAY = new Date('2026-06-03');
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
 // Same data structure as dashboard — in production, read purely from storage
 const CREATOR_DATA = {
@@ -195,14 +195,14 @@ let msDoneLocal = {};
 
 async function loadStorage() {
   try {
-    const r = await window.storage.get('agency_v3', true);
+    const r = await window.storage.get('agency_state_v2', true);
     if (r && r.value) {
       const s = JSON.parse(r.value);
       if (s.trigStates) Object.assign(trigStates, s.trigStates);
       if (s.trigNotes) Object.assign(trigNotes, s.trigNotes);
       if (s.milestones) {
         Object.entries(s.milestones).forEach(([pid, ms]) => {
-          msDoneLocal[pid] = ms.map(m => ({date: m.date, done: m.done}));
+          msDoneLocal[pid] = ms.map(m => ({date: m.date, done: m.done, label: m.label, who: m.who}));
         });
       }
     }
@@ -212,14 +212,14 @@ async function loadStorage() {
 
 async function saveStorage() {
   try {
-    const r = await window.storage.get('agency_v3', true);
+    const r = await window.storage.get('agency_state_v2', true);
     let existing = {};
     if (r && r.value) { try { existing = JSON.parse(r.value); } catch(e){} }
     if (!existing.milestones) existing.milestones = {};
     Object.entries(msDoneLocal).forEach(([pid, ms]) => { existing.milestones[pid] = ms; });
     existing.trigStates = trigStates;
     existing.trigNotes = trigNotes;
-    await window.storage.set('agency_v3', JSON.stringify(existing), true);
+    await window.storage.set('agency_state_v2', JSON.stringify(existing), true);
   } catch(e) {}
 }
 
@@ -312,20 +312,27 @@ function renderTimeline(cr) {
   let html = '<div class="section">';
   cr.projects.forEach(proj => {
     const saved = msDoneLocal[proj.id];
+    // use saved milestones if available (they may have more/different items than static data)
+    const milestones = saved && saved.length > 0
+      ? saved.map((s, i) => ({
+          label: s.label || (proj.milestones[i] && proj.milestones[i].label) || '里程碑',
+          date: s.date,
+          done: s.done
+        }))
+      : proj.milestones;
+
     html += `<div class="section-label" style="margin-bottom:6px">${proj.name}</div><div class="card" style="margin-bottom:14px">`;
-    if (!proj.milestones || proj.milestones.length === 0) {
+    if (!milestones || milestones.length === 0) {
       html += `<div style="padding:14px 16px;font-size:12px;color:var(--hint)">時程待確認</div>`;
     } else {
-      proj.milestones.forEach((m, i) => {
-        const isDone = saved && saved[i] ? saved[i].done : m.done;
-        const date = saved && saved[i] ? saved[i].date : m.date;
-        const chip = getChip(date, isDone);
-        const dotClass = isDone ? 'done' : chip.cls.includes('red') ? 'urgent' : chip.cls.includes('amber') ? 'soon' : 'upcoming';
+      milestones.forEach((m, i) => {
+        const chip = getChip(m.date, m.done);
+        const dotClass = m.done ? 'done' : chip.cls.includes('red') ? 'urgent' : chip.cls.includes('amber') ? 'soon' : 'upcoming';
         html += `<div class="timeline-item">
           <div class="tl-dot ${dotClass}"></div>
           <div class="tl-info">
-            <div class="tl-label" style="${isDone?'opacity:0.5':''}">${m.label}</div>
-            <div class="tl-date">${date || '日期待定'}</div>
+            <div class="tl-label" style="${m.done?'opacity:0.5':''}">${m.label}</div>
+            <div class="tl-date">${m.date || '日期待定'}</div>
           </div>
           <div class="${chip.cls}">${chip.txt}</div>
         </div>`;

@@ -107,22 +107,15 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 
 /* Notes section */
 .proj-notes{border-top:1px solid var(--border);padding:12px 14px}
-.notes-label{font-size:10px;font-weight:500;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.notes-input{width:100%;border:none;background:transparent;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);resize:none;outline:none;line-height:1.7;min-height:36px;max-height:200px;overflow-y:auto}
-.notes-input::placeholder{color:var(--hint)}
-.notes-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.note-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 6px 3px 9px;border-radius:5px;background:var(--blue-bg);color:var(--blue-text);border:1px solid #C5D8FC;text-decoration:none;max-width:280px}
-.note-link:hover{background:#D8E8FD}
-.note-link-text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1;min-width:0}
-.note-link i{font-size:12px;flex-shrink:0}
-.note-link-del{background:var(--blue-bg);border:none;cursor:pointer;color:var(--blue-text);font-size:12px;padding:2px 3px;margin-left:2px;line-height:1;flex-shrink:0;border-radius:3px;display:flex;align-items:center;opacity:0.6}
-.note-link-del:hover{opacity:1;background:#C5D8FC;color:var(--red-text)}
-.add-link-row{display:flex;gap:6px;margin-top:8px}
-.add-link-row input{flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none}
-.add-link-row input:focus{border-color:var(--border2)}
-.add-link-row button{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);white-space:nowrap}
-.notes-toggle{background:none;border:none;cursor:pointer;font-size:11px;color:var(--hint);font-family:'DM Sans',sans-serif;padding:0;display:flex;align-items:center;gap:3px}
-.notes-toggle:hover{color:var(--muted)}
+.notes-label{font-size:10px;font-weight:500;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.notes-label-left{display:flex;align-items:center;gap:5px}
+.notes-hint{font-size:10px;color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0}
+.notes-body{min-height:40px;max-height:200px;overflow-y:auto;font-size:12px;line-height:1.8;color:var(--text);outline:none;white-space:pre-wrap;word-break:break-word;cursor:text;border-radius:6px;padding:4px 6px;margin:-4px -6px;transition:background 0.15s}
+.notes-body:hover{background:var(--bg)}
+.notes-body:focus{background:var(--bg);box-shadow:0 0 0 1.5px var(--border2)}
+.notes-body:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
+.notes-body a{color:var(--blue-text);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.notes-body a:hover{opacity:0.8}
 
 /* Empty & no-project */
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
@@ -184,7 +177,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="toast" id="toast"></div>
 
 <script>
-const TODAY = new Date('2026-06-03');
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
 const CREATORS = {
   kurt: {
@@ -274,7 +267,6 @@ const CREATORS = {
 
 let currentCreator = 'kurt';
 let projNotes = {};
-let projLinks = {};
 
 async function loadStorage() {
   try {
@@ -298,7 +290,6 @@ async function loadStorage() {
       }
     }
       if (s.projNotes) Object.assign(projNotes, s.projNotes);
-      if (s.projLinks) Object.assign(projLinks, s.projLinks);
   } catch(e) {}
   renderCreator(currentCreator);
 }
@@ -313,7 +304,7 @@ async function saveStorage() {
         }));
       });
     });
-    await window.storage.set('agency_v3', JSON.stringify({milestones, projNotes, projLinks}), true);
+    await window.storage.set('agency_v3', JSON.stringify({milestones, projNotes}), true);
   } catch(e) {}
 }
 
@@ -365,12 +356,6 @@ function renderProject(proj, creatorKey) {
     : `<div class="ms-header"><div></div><div>日期</div><div>里程碑 <span style="font-size:9px;color:var(--hint);font-weight:400;letter-spacing:0">(點擊文字可編輯 · 拖曳 ⠿ 可排序)</span></div><div></div><div></div><div></div></div>${rows}`;
 
   const note = projNotes[proj.id] || '';
-  const links = projLinks[proj.id] || [];
-  const linksHtml = links.map((l,li) => `
-    <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
-      <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
-      <button class="note-link-del" onclick="event.preventDefault();removeLink('${proj.id}',${li},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
-    </a>`).join('');
 
   return `<div class="project-section">
     <div class="section-header">
@@ -388,17 +373,16 @@ function renderProject(proj, creatorKey) {
       </div>
       <div class="proj-notes" id="notes-${proj.id}">
         <div class="notes-label">
-          <i class="ti ti-notes" aria-hidden="true"></i> 備註 &amp; 檔案連結
+          <div class="notes-label-left"><i class="ti ti-notes" aria-hidden="true"></i> 備註 &amp; 連結</div>
+          <span class="notes-hint">貼入連結自動可點擊</span>
         </div>
-        <textarea class="notes-input" id="noteinp-${proj.id}" placeholder="Brief 重點、合作需求、特殊備注..."
+        <div class="notes-body" id="noteinp-${proj.id}"
+          contenteditable="true" spellcheck="false"
+          data-placeholder="Brief 重點、合作需求、貼上 Google Drive / Notion 連結..."
+          data-proj="${proj.id}" data-creator="${creatorKey}"
           onblur="saveNote('${proj.id}','${creatorKey}')"
-          oninput="autoResize(this)"
-        >${note}</textarea>
-        ${links.length > 0 ? `<div class="notes-links" id="links-${proj.id}">${linksHtml}</div>` : `<div class="notes-links" id="links-${proj.id}"></div>`}
-        <div class="add-link-row">
-          <input type="text" id="linkinp-${proj.id}" placeholder="貼上連結（Google Drive、Notion、Dropbox...）" onkeydown="if(event.key==='Enter'){event.preventDefault();addLink('${proj.id}','${creatorKey}')}">
-          <button onclick="addLink('${proj.id}','${creatorKey}')">+ 加入</button>
-        </div>
+          onpaste="handlePaste(event,'${proj.id}','${creatorKey}')"
+        >${renderNoteContent(note)}</div>
       </div>
     </div>
   </div>`;
@@ -513,10 +497,8 @@ function updateDate(projId, i, val, creatorKey) {
   proj.milestones[i].date = val;
   const row = document.querySelector(`[data-proj="${projId}"][data-i="${i}"]`);
   if (row) {
-    const chips = row.querySelectorAll('div');
     const c = getChip(val, proj.milestones[i].done);
-    // chip is the 3rd column div
-    const chipEl = row.children[2];
+    const chipEl = row.querySelector('.chip');
     if (chipEl) { chipEl.className = c.cls; chipEl.textContent = c.txt; }
     const dateInp = row.querySelector('.date-inp');
     if (dateInp) dateInp.classList.toggle('empty-date', !val);
@@ -574,63 +556,39 @@ function doneCount(cr) {
 
 
 // ── NOTES & LINKS ────────────────────────────────────────────────────────────
+function renderNoteContent(text) {
+  if (!text) return '';
+  // escape HTML then linkify URLs
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()">$1</a>');
+}
+
+function getNoteText(el) {
+  // extract plain text preserving newlines from <br> and block elements
+  return el.innerText || '';
+}
+
 function saveNote(projId, creatorKey) {
-  const inp = document.getElementById('noteinp-'+projId);
-  if (!inp) return;
-  projNotes[projId] = inp.value;
+  const el = document.getElementById('noteinp-'+projId);
+  if (!el) return;
+  projNotes[projId] = getNoteText(el);
   saveStorage();
 }
 
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-}
-
-function addLink(projId, creatorKey) {
-  const inp = document.getElementById('linkinp-'+projId);
-  if (!inp) return;
-  let url = inp.value.trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-  // derive a short label from url
-  let label = url;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace('www.','');
-    const path = u.pathname.split('/').filter(Boolean);
-    label = host + (path.length ? ' / '+path[path.length-1] : '');
-    if (label.length > 40) label = label.slice(0,38)+'…';
-  } catch(e) {}
-  if (!projLinks[projId]) projLinks[projId] = [];
-  projLinks[projId].push({url, label});
-  inp.value = '';
-  saveStorage();
-  // re-render just the links area
-  const container = document.getElementById('links-'+projId);
-  if (container) {
-    const links = projLinks[projId];
-    container.innerHTML = links.map((l,li) => `
-      <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
-        <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
-        <button class="note-link-del" onclick="event.preventDefault();removeLink('${projId}',${li},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
-      </a>`).join('');
-  }
-  showToast('連結已加入');
-}
-
-function removeLink(projId, li, creatorKey) {
-  if (!projLinks[projId]) return;
-  projLinks[projId].splice(li, 1);
-  saveStorage();
-  const container = document.getElementById('links-'+projId);
-  if (container) {
-    const links = projLinks[projId];
-    container.innerHTML = links.map((l,idx) => `
-      <a class="note-link" href="${l.url}" target="_blank" rel="noopener" title="${l.url}">
-        <i class="ti ti-link" aria-hidden="true"></i><span class="note-link-text">${l.label||l.url}</span>
-        <button class="note-link-del" onclick="event.preventDefault();removeLink('${projId}',${idx},'${creatorKey}')" aria-label="移除連結"><i class="ti ti-x" aria-hidden="true"></i></button>
-      </a>`).join('');
-  }
+function handlePaste(e, projId, creatorKey) {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  // insert as plain text at cursor
+  document.execCommand('insertText', false, text);
+  // after a tick, re-render to linkify
+  setTimeout(() => {
+    const el = document.getElementById('noteinp-'+projId);
+    if (!el) return;
+    const raw = getNoteText(el);
+    projNotes[projId] = raw;
+    el.innerHTML = renderNoteContent(raw);
+    saveStorage();
+  }, 10);
 }
 
 // ── DRAG & DROP ────────────────────────────────────────────────────────────
